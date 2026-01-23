@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEAM Explorer - Blockchain Explorer for Beam Privacy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+:root {
+    --bg-primary: #0a0e17;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1f2937;
+    --bg-card: #151d2e;
+    --bg-hover: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent-primary: #25c2a0;
+    --accent-secondary: #00d4ff;
+    --accent-purple: #a855f7;
+    --accent-pink: #ec4899;
+    --accent-orange: #f97316;
+    --accent-yellow: #eab308;
+    --border-color: #2d3748;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+    --transition-fast: 150ms ease;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+a { color: var(--accent-primary); text-decoration: none; transition: color var(--transition-fast); }
+a:hover { color: var(--accent-secondary); }
+.container { max-width: 1400px; margin: 0 auto; padding: 0 var(--spacing-lg); }
+
+/* Header */
+.header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md) 0;
+    flex-wrap: wrap;
+}
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+.logo svg { color: var(--accent-primary); }
+.nav { display: flex; gap: var(--spacing-xs); flex-wrap: wrap; }
+.nav-link {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+.nav-link:hover { color: var(--text-primary); background: var(--bg-hover); }
+.nav-link.active { color: var(--accent-primary); background: rgba(37, 194, 160, 0.1); }
+
+/* Node selector */
+.node-selector { display: flex; align-items: center; gap: var(--spacing-sm); }
+.node-selector select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+.node-selector select:focus { outline: none; border-color: var(--accent-primary); }
+.node-status { width: 10px; height: 10px; border-radius: 50%; background: var(--error); transition: background var(--transition-fast); }
+.node-status.connected { background: var(--success); }
+.custom-node-input { display: none; margin-top: var(--spacing-sm); padding-bottom: var(--spacing-sm); }
+.custom-node-input.show { display: flex; gap: var(--spacing-sm); }
+.custom-node-input input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    color: var(--text-primary);
+    flex: 1;
+}
+.custom-node-input button {
+    background: var(--accent-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--bg-primary);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* Main content */
+.main { padding: var(--spacing-xl) 0; min-height: calc(100vh - 200px); }
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Hero */
+.hero { text-align: center; padding: var(--spacing-2xl) 0; }
+.hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.hero-subtitle { font-size: 1.125rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto; }
+
+/* Stats grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-2xl);
+}
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    transition: all var(--transition-fast);
+}
+.stat-card:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(37, 194, 160, 0.1);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.stat-icon svg { width: 20px; height: 20px; color: var(--accent-primary); }
+.stat-icon.purple { background: rgba(168, 85, 247, 0.1); }
+.stat-icon.purple svg { color: var(--accent-purple); }
+.stat-icon.orange { background: rgba(249, 115, 22, 0.1); }
+.stat-icon.orange svg { color: var(--accent-orange); }
+.stat-icon.cyan { background: rgba(0, 212, 255, 0.1); }
+.stat-icon.cyan svg { color: var(--accent-secondary); }
+.stat-icon.yellow { background: rgba(234, 179, 8, 0.1); }
+.stat-icon.yellow svg { color: var(--accent-yellow); }
+.stat-info { display: flex; flex-direction: column; min-width: 0; }
+.stat-label { font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; }
+.stat-value { font-size: 1rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+/* Sections */
+.section { margin-bottom: var(--spacing-2xl); }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-lg); flex-wrap: wrap; gap: var(--spacing-md); }
+.section-header h2 { font-size: 1.5rem; font-weight: 600; }
+.section-desc { color: var(--text-secondary); margin-bottom: var(--spacing-lg); max-width: 900px; }
+
+/* Column selector */
+.column-selector {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+.column-selector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+    cursor: pointer;
+}
+.column-selector-header h4 { font-size: 0.875rem; color: var(--text-secondary); }
+.column-selector-toggle { color: var(--text-muted); font-size: 0.75rem; }
+.column-groups { display: none; gap: var(--spacing-lg); flex-wrap: wrap; }
+.column-groups.show { display: flex; }
+.column-group { min-width: 150px; }
+.column-group-title { font-size: 0.75rem; color: var(--text-muted); margin-bottom: var(--spacing-sm); text-transform: uppercase; }
+.column-checkbox { display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs); font-size: 0.8125rem; cursor: pointer; }
+.column-checkbox input { cursor: pointer; accent-color: var(--accent-primary); }
+.column-checkbox:hover { color: var(--accent-primary); }
+
+/* Tables */
+.table-container {
+    overflow-x: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.data-table th, .data-table td { padding: var(--spacing-md); text-align: left; border-bottom: 1px solid var(--border-color); }
+.data-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.data-table tbody tr { transition: background var(--transition-fast); cursor: pointer; }
+.data-table tbody tr:hover { background: var(--bg-hover); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table .loading, .data-table .empty { text-align: center; padding: var(--spacing-xl); color: var(--text-muted); cursor: default; }
+
+/* Typography helpers */
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; }
+.hash { color: var(--accent-secondary); cursor: pointer; }
+.hash:hover { text-decoration: underline; }
+.truncate { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+.amount-positive { color: var(--success); }
+.amount-negative { color: var(--error); }
+
+/* Cards */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--spacing-lg); }
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.card:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+.card-header { display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md); }
+.card-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: white;
+    flex-shrink: 0;
+}
+.card-title { flex: 1; min-width: 0; }
+.card-title h4 { font-size: 1rem; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-title .subtitle { color: var(--text-muted); font-size: 0.875rem; }
+.card-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+.card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--border-color); }
+.card-stat { display: flex; flex-direction: column; }
+.card-stat-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
+.card-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; font-weight: 500; }
+
+/* Pool cards */
+.pool-pair { display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-md); }
+.pool-pair-icons { display: flex; }
+.pool-pair-icons .card-icon { width: 32px; height: 32px; font-size: 0.7rem; margin-right: -8px; border: 2px solid var(--bg-card); }
+.pool-pair-icons .card-icon:last-child { margin-right: 0; }
+.pool-pair-name { font-weight: 600; margin-left: var(--spacing-sm); }
+.volatility-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+.volatility-badge.high { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+.volatility-badge.medium { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+.volatility-badge.low { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+.pool-stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm); }
+.pool-stat { padding: var(--spacing-sm); background: var(--bg-tertiary); border-radius: var(--radius-sm); }
+.pool-stat-label { font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; }
+.pool-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; margin-top: 2px; }
+.pool-stat.full-width { grid-column: 1 / -1; }
+
+/* Trade type badges */
+.trade-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.trade-type.trade { background: rgba(37, 194, 160, 0.2); color: var(--accent-primary); }
+.trade-type.liquidity { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
+.trade-type.mint { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+.trade-type.burn { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+.trade-type.create { background: rgba(0, 212, 255, 0.2); color: var(--accent-secondary); }
+.trade-type.withdraw { background: rgba(249, 115, 22, 0.2); color: var(--accent-orange); }
+
+/* Detail pages */
+.back-link { display: inline-flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-lg); font-weight: 500; }
+.back-link svg { width: 16px; height: 16px; }
+.detail-header { display: flex; align-items: center; gap: var(--spacing-lg); margin-bottom: var(--spacing-xl); flex-wrap: wrap; }
+.detail-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+.detail-title h2 { font-size: 1.75rem; margin-bottom: var(--spacing-xs); }
+.detail-title .subtitle { color: var(--text-secondary); font-size: 1rem; }
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+.detail-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+}
+.detail-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: var(--spacing-xs); }
+.detail-value { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; word-break: break-all; }
+.detail-section { margin-top: var(--spacing-xl); }
+.detail-section h3 { font-size: 1.25rem; margin-bottom: var(--spacing-lg); }
+
+/* Tooltips */
+.tooltip { position: relative; border-bottom: 1px dotted var(--text-muted); cursor: help; }
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    max-width: 300px;
+    white-space: normal;
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 1000;
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+    transition: all var(--transition-fast);
+}
+.tooltip:hover::after { opacity: 1; visibility: visible; }
+
+/* Loading states */
+.loading-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--text-muted);
+}
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    margin-right: var(--spacing-sm);
+    vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Load more button */
+.load-more {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-top: var(--spacing-lg);
+}
+.load-more:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--accent-primary); }
+.load-more:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Filter input */
+.filter-input {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    width: 220px;
+}
+.filter-input:focus { outline: none; border-color: var(--accent-primary); }
+.filter-input::placeholder { color: var(--text-muted); }
+
+/* Tabs */
+.tabs { display: flex; gap: var(--spacing-xs); margin-bottom: var(--spacing-lg); border-bottom: 1px solid var(--border-color); }
+.tab {
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all var(--transition-fast);
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+
+/* Footer */
+.footer { background: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: var(--spacing-xl) 0; }
+.footer-content { text-align: center; color: var(--text-muted); font-size: 0.875rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero h1 { font-size: 1.75rem; }
+    .stats-grid, .card-grid { grid-template-columns: 1fr; }
+    .header-content { justify-content: center; }
+    .nav { width: 100%; justify-content: center; }
+    .detail-header { flex-direction: column; text-align: center; }
+    .filter-input { width: 100%; }
+}
+
+/* Copy button */
+.copy-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+.copy-btn:hover { color: var(--accent-primary); background: var(--bg-tertiary); }
+.copy-btn.copied { color: var(--success); }
+
+/* Swap coins */
+.swap-coin-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    text-align: center;
+}
+.swap-coin-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto var(--spacing-md);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: white;
+}
+.swap-coin-icon.btc { background: linear-gradient(135deg, #f7931a, #ffad33); }
+.swap-coin-icon.eth { background: linear-gradient(135deg, #627eea, #8fa8ff); }
+.swap-coin-icon.ltc { background: linear-gradient(135deg, #bfbbbb, #d9d9d9); }
+.swap-coin-icon.doge { background: linear-gradient(135deg, #c2a633, #e8d54a); }
+.swap-coin-icon.dash { background: linear-gradient(135deg, #008ce7, #33a3ed); }
+.swap-coin-icon.qtum { background: linear-gradient(135deg, #2e9ad0, #5bb8e0); }
+.swap-coin-icon.dai { background: linear-gradient(135deg, #f5ac37, #ffc04d); }
+.swap-coin-icon.usdt { background: linear-gradient(135deg, #26a17b, #3dd9a0); }
+.swap-coin-icon.wbtc { background: linear-gradient(135deg, #5a5564, #7a7584); }
+.swap-coin-icon.beam { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); }
+.swap-coin-name { font-weight: 600; margin-bottom: var(--spacing-xs); }
+.swap-coin-amount { font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo" onclick="showPage('home')">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2"/>
+                            <path d="M10 16L14 20L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>BEAM Explorer</span>
+                    </div>
+                    <nav class="nav">
+                        <span class="nav-link active" data-page="home" onclick="showPage('home')">Home</span>
+                        <span class="nav-link" data-page="blocks" onclick="showPage('blocks')">Blocks</span>
+                        <span class="nav-link" data-page="assets" onclick="showPage('assets')">Assets</span>
+                        <span class="nav-link" data-page="dex" onclick="showPage('dex')">DEX</span>
+                        <span class="nav-link" data-page="contracts" onclick="showPage('contracts')">Contracts</span>
+                        <span class="nav-link" data-page="swaps" onclick="showPage('swaps')">Atomic Swaps</span>
+                    </nav>
+                    <div class="node-selector">
+                        <span class="node-status" id="nodeStatus"></span>
+                        <select id="nodeSelect" onchange="changeNode()">
+                            <option value="https://explorer.0xmx.net/api">explorer.0xmx.net</option>
+                            <option value="https://explorer-api.beamprivacy.com">explorer-api.beamprivacy.com</option>
+                            <option value="https://BeamSmart.net:8000">BeamSmart.net</option>
+                            <option value="custom">Custom Node...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="custom-node-input" id="customNodeInput">
+                    <input type="text" id="customNodeUrl" placeholder="Enter node URL (e.g., https://mynode.com/api)">
+                    <button onclick="setCustomNode()">Connect</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="container">
+                <!-- Home Page -->
+                <div id="page-home" class="page active">
+                    <section class="hero">
+                        <h1>Explore the BEAM Blockchain</h1>
+                        <p class="hero-subtitle">
+                            BEAM is a privacy-focused cryptocurrency using
+                            <span class="tooltip" data-tooltip="A protocol that hides transaction amounts and addresses while still verifying them cryptographically">Mimblewimble</span>
+                            technology. All transactions are private by default.
+                        </p>
+                    </section>
+
+                    <section class="stats-grid" id="stats-grid">
+                        <!-- Stats will be loaded dynamically -->
+                    </section>
+
+                    <section class="section">
+                        <div class="section-header">
+                            <h2>Recent Blocks</h2>
+                            <a href="#" onclick="showPage('blocks'); return false;">View All Blocks →</a>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead><tr><th>Height</th><th>Time</th><th>Txs</th><th>MW In</th><th>MW Out</th><th>Fee (BEAM)</th></tr></thead>
+                                <tbody id="recent-blocks"><tr><td colspan="6" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Blocks Page -->
+                <div id="page-blocks" class="page">
+                    <section class="section">
+                        <div class="section-header"><h2>Blockchain Blocks</h2></div>
+                        <p class="section-desc">
+                            Browse all blocks on the BEAM blockchain. Click any block to view its details.
+                            Use the column selector below to customize visible data.
+                        </p>
+
+                        <!-- Column Selector -->
+                        <div class="column-selector">
+                            <div class="column-selector-header" onclick="toggleColumnSelector()">
+                                <h4>📊 Column Filters</h4>
+                                <span class="column-selector-toggle" id="column-toggle">▼ Show</span>
+                            </div>
+                            <div class="column-groups" id="column-groups">
+                                <div class="column-group">
+                                    <div class="column-group-title">Basic</div>
+                                    <label class="column-checkbox"><input type="checkbox" value="H" checked disabled> Height</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="T" checked> Timestamp</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="h"> Hash</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="d" checked> Difficulty</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="D"> Chainwork</label>
+                                </div>
+                                <div class="column-group">
+                                    <div class="column-group-title">Transactions</div>
+                                    <label class="column-checkbox"><input type="checkbox" value="k" checked> Txs</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="K"> Total Txs</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="f" checked> Fee</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="F"> Total Fee</label>
+                                </div>
+                                <div class="column-group">
+                                    <div class="column-group-title">Mimblewimble</div>
+                                    <label class="column-checkbox"><input type="checkbox" value="i" checked> MW Inputs</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="I"> Total MW In</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="o" checked> MW Outputs</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="O"> Total MW Out</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="u"> UTXOs</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="U"> Total UTXOs</label>
+                                </div>
+                                <div class="column-group">
+                                    <div class="column-group-title">Shielded Pool</div>
+                                    <label class="column-checkbox"><input type="checkbox" value="y" checked> SH Inputs</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="Y"> Total SH In</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="z" checked> SH Outputs</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="Z"> Total SH Out</label>
+                                </div>
+                                <div class="column-group">
+                                    <div class="column-group-title">Contracts</div>
+                                    <label class="column-checkbox"><input type="checkbox" value="b"> Contracts</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="B"> Total Contracts</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="p" checked> Contract Calls</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="P"> Total Calls</label>
+                                </div>
+                                <div class="column-group">
+                                    <div class="column-group-title">Size</div>
+                                    <label class="column-checkbox"><input type="checkbox" value="c"> Size Compressed</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="C"> Total Compressed</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="a"> Size Archive</label>
+                                    <label class="column-checkbox"><input type="checkbox" value="A"> Total Archive</label>
+                                </div>
+                            </div>
+                            <button class="load-more" style="margin-top:var(--spacing-md)" onclick="applyBlockColumns()">Apply Filters</button>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead id="blocks-header"><tr><th>Height</th><th>Time</th><th>Txs</th><th>MW In</th><th>MW Out</th><th>SH In</th><th>SH Out</th><th>Contracts</th><th>Fee</th><th>Difficulty</th></tr></thead>
+                                <tbody id="blocks-list"><tr><td colspan="10" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+                            </table>
+                        </div>
+                        <button class="load-more" id="blocks-load-more" onclick="loadMoreBlocks()">Load More Blocks</button>
+                    </section>
+                </div>
+
+                <!-- Block Detail Page -->
+                <div id="page-block-detail" class="page">
+                    <section class="section">
+                        <a href="#" class="back-link" onclick="showPage('blocks'); return false;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                            Back to Blocks
+                        </a>
+                        <div id="block-detail-content"><div class="loading-card"><span class="spinner"></span>Loading block...</div></div>
+                    </section>
+                </div>
+
+                <!-- Assets Page -->
+                <div id="page-assets" class="page">
+                    <section class="section">
+                        <div class="section-header">
+                            <h2>Confidential Assets</h2>
+                            <input type="text" class="filter-input" id="asset-filter" placeholder="Search by name, symbol, ID..." oninput="filterAssets()">
+                        </div>
+                        <p class="section-desc">
+                            <span class="tooltip" data-tooltip="Custom tokens created on BEAM blockchain">Confidential Assets (CAs)</span> are custom tokens on BEAM with built-in privacy.
+                            Click any asset to view its details, distribution, and trading pools.
+                        </p>
+                        <div class="card-grid" id="assets-list"><div class="loading-card"><span class="spinner"></span>Loading assets...</div></div>
+                    </section>
+                </div>
+
+                <!-- Asset Detail Page -->
+                <div id="page-asset-detail" class="page">
+                    <section class="section">
+                        <a href="#" class="back-link" onclick="showPage('assets'); return false;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                            Back to Assets
+                        </a>
+                        <div id="asset-detail-content"><div class="loading-card"><span class="spinner"></span>Loading asset...</div></div>
+                    </section>
+                </div>
+
+                <!-- DEX Page -->
+                <div id="page-dex" class="page">
+                    <section class="section">
+                        <div class="section-header"><h2>DEX - Decentralized Exchange</h2></div>
+                        <p class="section-desc">
+                            The BEAM <span class="tooltip" data-tooltip="Decentralized Exchange - trade directly on blockchain">DEX</span> uses
+                            <span class="tooltip" data-tooltip="Automated Market Maker - prices set by pool reserves">AMM</span>
+                            liquidity pools. All trades maintain privacy guarantees.
+                        </p>
+
+                        <div class="tabs">
+                            <span class="tab active" data-tab="pools" onclick="switchDexTab('pools')">Liquidity Pools</span>
+                            <span class="tab" data-tab="trades" onclick="switchDexTab('trades')">Recent Trades</span>
+                        </div>
+
+                        <div id="dex-pools-tab">
+                            <div class="card-grid" id="pools-list"><div class="loading-card"><span class="spinner"></span>Loading pools...</div></div>
+                        </div>
+
+                        <div id="dex-trades-tab" style="display:none;">
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead><tr><th>Block</th><th>Type</th><th>Token In</th><th>Token Out</th><th>Amount In</th><th>Amount Out</th></tr></thead>
+                                    <tbody id="trades-list"><tr><td colspan="6" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+                                </table>
+                            </div>
+                            <button class="load-more" id="trades-load-more" onclick="loadMoreTrades()">Load More Trades</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Contracts Page -->
+                <div id="page-contracts" class="page">
+                    <section class="section">
+                        <div class="section-header">
+                            <h2>Smart Contracts (Shaders)</h2>
+                            <input type="text" class="filter-input" id="contract-filter" placeholder="Search contracts..." oninput="filterContracts()">
+                        </div>
+                        <p class="section-desc">
+                            <span class="tooltip" data-tooltip="Self-executing programs on the blockchain">Smart contracts</span> on BEAM are called "Shaders".
+                            They enable DeFi, governance, NFTs and more while preserving privacy.
+                        </p>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead><tr><th>Contract ID</th><th>Type</th><th>Deploy Height</th><th>Locked Funds</th><th>Owned Assets</th></tr></thead>
+                                <tbody id="contracts-list"><tr><td colspan="5" class="loading"><span class="spinner"></span>Loading...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Contract Detail Page -->
+                <div id="page-contract-detail" class="page">
+                    <section class="section">
+                        <a href="#" class="back-link" onclick="showPage('contracts'); return false;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                            Back to Contracts
+                        </a>
+                        <div id="contract-detail-content"><div class="loading-card"><span class="spinner"></span>Loading contract...</div></div>
+                    </section>
+                </div>
+
+                <!-- Atomic Swaps Page -->
+                <div id="page-swaps" class="page">
+                    <section class="section">
+                        <div class="section-header"><h2>Atomic Swaps</h2></div>
+                        <p class="section-desc">
+                            <span class="tooltip" data-tooltip="Trustless cross-chain exchanges without intermediaries">Atomic Swaps</span>
+                            allow direct peer-to-peer trading between BEAM and other cryptocurrencies
+                            (BTC, ETH, LTC, DOGE, DASH, USDT, DAI, WBTC, QTUM) without third parties.
+                        </p>
+
+                        <div id="swap-totals-grid" class="stats-grid" style="margin-bottom: var(--spacing-xl);">
+                            <div class="loading-card"><span class="spinner"></span>Loading swap totals...</div>
+                        </div>
+
+                        <h3 style="margin-bottom: var(--spacing-lg);">Active Swap Offers</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead><tr><th>Offer ID</th><th>Send</th><th>Receive</th><th>Rate</th><th>Min Amount</th><th>Status</th></tr></thead>
+                                <tbody id="swap-offers-list"><tr><td colspan="6" class="loading"><span class="spinner"></span>Loading offers...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <p>BEAM Explorer - Open Source Blockchain Explorer | <a href="https://beam.mw" target="_blank">beam.mw</a></p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+<script>
+// ==================== CONFIGURATION ====================
+const DEX_CONTRACT_ID = '729fe098d9fd2b57705db1a05a74103dd4b891f535aef2ae69b47bcfdeef9cbf';
+let API_BASE = 'https://explorer.0xmx.net/api';
+
+// Column codes for /hdrs endpoint
+const BLOCK_COLUMNS = {
+    H: { name: 'Height', key: 'Height' },
+    N: { name: 'Number', key: 'Number' },
+    T: { name: 'Timestamp', key: 'Timestamp' },
+    h: { name: 'Hash', key: 'Hash' },
+    g: { name: 'd.Age', key: 'd.Age' },
+    G: { name: 'Age', key: 'Age' },
+    d: { name: 'Difficulty', key: 'Difficulty' },
+    D: { name: 'Chainwork', key: 'Chainwork' },
+    f: { name: 'Fee', key: 'Fee' },
+    F: { name: 'T.Fee', key: 'T.Fee' },
+    k: { name: 'Txs', key: 'Txs' },
+    K: { name: 'T.Txs', key: 'T.Txs' },
+    i: { name: 'MW.Inputs', key: 'MW.Inputs' },
+    I: { name: 'T.MW.Inputs', key: 'T.MW.Inputs' },
+    o: { name: 'MW.Outputs', key: 'MW.Outputs' },
+    O: { name: 'T.MW.Outputs', key: 'T.MW.Outputs' },
+    u: { name: 'MW.Utxos', key: 'MW.Utxos' },
+    U: { name: 'T.MW.Utxos', key: 'T.MW.Utxos' },
+    y: { name: 'SH.Inputs', key: 'SH.Inputs' },
+    Y: { name: 'T.SH.Inputs', key: 'T.SH.Inputs' },
+    z: { name: 'SH.Outputs', key: 'SH.Outputs' },
+    Z: { name: 'T.SH.Outputs', key: 'T.SH.Outputs' },
+    b: { name: 'Contracts', key: 'Contracts' },
+    B: { name: 'T.Contracts', key: 'T.Contracts' },
+    p: { name: 'ContractCalls', key: 'ContractCalls' },
+    P: { name: 'T.ContractCalls', key: 'T.ContractCalls' },
+    c: { name: 'D.Size.Compressed', key: 'D.Size.Compressed' },
+    C: { name: 'Size.Compressed', key: 'Size.Compressed' },
+    a: { name: 'D.Size.Archive', key: 'D.Size.Archive' },
+    A: { name: 'Size.Archive', key: 'Size.Archive' }
+};
+
+// ==================== STATE ====================
+let assetsData = [];
+let assetsMap = {};
+let contractsData = [];
+let currentBlockHeight = 0;
+let blocksLoadedUntil = 0;
+let tradesLoadedUntil = 0;
+let statusData = null;
+let selectedBlockCols = 'HTdkfioyxzp'; // Default columns
+let blockHeaders = [];
+
+// ==================== NODE MANAGEMENT ====================
+function changeNode() {
+    const select = document.getElementById('nodeSelect');
+    const customInput = document.getElementById('customNodeInput');
+    if (select.value === 'custom') {
+        customInput.classList.add('show');
+    } else {
+        customInput.classList.remove('show');
+        API_BASE = select.value;
+        resetAndRefresh();
+    }
+}
+
+function setCustomNode() {
+    const url = document.getElementById('customNodeUrl').value.trim();
+    if (url) {
+        API_BASE = url.replace(/\/$/, '');
+        document.getElementById('customNodeInput').classList.remove('show');
+        resetAndRefresh();
+    }
+}
+
+async function testConnection() {
+    const status = document.getElementById('nodeStatus');
+    status.classList.remove('connected');
+    try {
+        const resp = await fetch(`${API_BASE}/status`, { signal: AbortSignal.timeout(5000) });
+        if (resp.ok) {
+            status.classList.add('connected');
+            return true;
+        }
+    } catch (e) { console.error('Connection failed:', e); }
+    return false;
+}
+
+function resetAndRefresh() {
+    assetsData = [];
+    assetsMap = {};
+    contractsData = [];
+    blocksLoadedUntil = 0;
+    tradesLoadedUntil = 0;
+    statusData = null;
+    testConnection();
+    const activePage = document.querySelector('.nav-link.active');
+    if (activePage) showPage(activePage.dataset.page);
+}
+
+// ==================== NAVIGATION ====================
+function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+    const pageEl = document.getElementById(`page-${page}`);
+    if (pageEl) {
+        pageEl.classList.add('active');
+        const navLink = document.querySelector(`.nav-link[data-page="${page}"]`);
+        if (navLink) navLink.classList.add('active');
+
+        switch(page) {
+            case 'home': loadStatus(); loadRecentBlocks(); break;
+            case 'blocks': if (!blocksLoadedUntil) loadBlocks(); break;
+            case 'assets': loadAssets(); break;
+            case 'dex': loadDexData(); break;
+            case 'contracts': if (!contractsData.length) loadContracts(); break;
+            case 'swaps': loadSwaps(); break;
+        }
+    }
+    window.scrollTo(0, 0);
+}
+
+function showPageDirect(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(`page-${page}`).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+// ==================== COLUMN SELECTOR ====================
+function toggleColumnSelector() {
+    const groups = document.getElementById('column-groups');
+    const toggle = document.getElementById('column-toggle');
+    groups.classList.toggle('show');
+    toggle.textContent = groups.classList.contains('show') ? '▲ Hide' : '▼ Show';
+}
+
+function getSelectedColumns() {
+    const checkboxes = document.querySelectorAll('.column-checkbox input:checked');
+    return Array.from(checkboxes).map(cb => cb.value).join('');
+}
+
+function applyBlockColumns() {
+    selectedBlockCols = getSelectedColumns();
+    blocksLoadedUntil = 0;
+    loadBlocks();
+}
+
+// ==================== API HELPERS ====================
+async function fetchAPI(endpoint, params = {}) {
+    const url = new URL(`${API_BASE}${endpoint}`);
+    Object.entries(params).forEach(([k, v]) => v != null && url.searchParams.append(k, v));
+    console.log('Fetching:', url.toString());
+    const resp = await fetch(url.toString());
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+}
+
+function parseTableValue(cell) {
+    if (cell == null) return null;
+    if (typeof cell !== 'object') return cell;
+    if (cell.type === 'table') return cell;
+    if (cell.type === 'amount') return cell.value;
+    if ('value' in cell) return cell.value;
+    return cell;
+}
+
+function parseTableRows(data) {
+    if (!data?.value || !Array.isArray(data.value) || data.value.length < 2) return [];
+    const headerRow = data.value[0];
+    if (!Array.isArray(headerRow)) return [];
+    const headers = headerRow.map(h => parseTableValue(h) || String(h));
+    return data.value.slice(1).map(row => {
+        if (!Array.isArray(row)) return row;
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = parseTableValue(row[i]));
+        return obj;
+    });
+}
+
+function countNestedTable(cell) {
+    if (!cell || typeof cell !== 'object') return 0;
+    if (cell.type === 'table' && Array.isArray(cell.value)) {
+        return Math.max(0, cell.value.length - 1);
+    }
+    return 0;
+}
+
+// ==================== STATUS ====================
+async function loadStatus() {
+    const statsGrid = document.getElementById('stats-grid');
+    try {
+        const status = await fetchAPI('/status');
+        statusData = status;
+        currentBlockHeight = status.height || 0;
+        document.getElementById('nodeStatus').classList.add('connected');
+
+        // Build comprehensive stats grid
+        const stats = [
+            { label: 'Block Height', value: formatNumber(status.height), icon: 'blocks' },
+            { label: 'Peers Connected', value: status.peers_count || 0, icon: 'peers', color: 'purple' },
+            { label: 'Chainwork', value: formatLargeNumber(cleanNumber(status.chainwork)), icon: 'chain', color: 'cyan' },
+            { label: 'Shielded Outs (24h)', value: formatNumber(status.shielded_outputs_per_24h || 0), icon: 'shield', color: 'orange' },
+            { label: 'Total Shielded Outs', value: formatNumber(status.shielded_outputs_total || 0), icon: 'shield-total' },
+            { label: 'Shielded Ready (hrs)', value: formatNumber(Math.round(status.shielded_possible_ready_in_hours || 0)), icon: 'time', color: 'yellow' },
+            { label: 'Last Block', value: formatTime(status.timestamp), icon: 'clock', color: 'purple' },
+            { label: 'Block Hash', value: `${(status.hash || '').slice(0,8)}...`, icon: 'hash', color: 'cyan' },
+        ];
+
+        statsGrid.innerHTML = stats.map(s => `
+            <div class="stat-card">
+                <div class="stat-icon ${s.color || ''}">${getStatIcon(s.icon)}</div>
+                <div class="stat-info">
+                    <span class="stat-label">${s.label}</span>
+                    <span class="stat-value">${s.value}</span>
+                </div>
+            </div>
+        `).join('');
+
+        // Load assets count
+        if (!assetsData.length) {
+            const assetsResp = await fetchAPI('/assets');
+            cacheAssets(assetsResp);
+        }
+    } catch (e) {
+        console.error('Status error:', e);
+        document.getElementById('nodeStatus').classList.remove('connected');
+        statsGrid.innerHTML = `<div class="loading-card">Error loading stats: ${e.message}</div>`;
+    }
+}
+
+function getStatIcon(type) {
+    const icons = {
+        blocks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+        peers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        chain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+        shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+        'shield-total': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+        time: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+        clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+        hash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>',
+    };
+    return icons[type] || icons.blocks;
+}
+
+function cacheAssets(resp) {
+    const rows = parseTableRows(resp);
+    assetsData = rows;
+    assetsMap = { 0: { id: 0, symbol: 'BEAM', name: 'BEAM', decimals: 8 } };
+    rows.forEach(a => {
+        const meta = parseMetadata(a.Metadata);
+        assetsMap[a.Aid] = {
+            id: a.Aid,
+            symbol: meta.UN || meta.SN || meta.N || `CA-${a.Aid}`,
+            name: meta.N || `Asset ${a.Aid}`,
+            decimals: getDecimals(meta.NTHUN),
+            supply: a.Supply,
+            deposit: a.Deposit,
+            metadata: meta
+        };
+    });
+}
+
+// ==================== BLOCKS ====================
+async function loadRecentBlocks() {
+    const tbody = document.getElementById('recent-blocks');
+    try {
+        const data = await fetchAPI('/hdrs', { nMax: 10, exp_am: 1, cols: 'HTkiof' });
+        const rows = parseTableRows(data);
+
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">No blocks found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = rows.map(b => `
+            <tr onclick="showBlockDetail(${b.Height})">
+                <td><span class="mono hash">${formatNumber(b.Height)}</span></td>
+                <td>${formatTime(b.Timestamp)}</td>
+                <td>${formatNumber(cleanNumber(b.Txs))}</td>
+                <td>${formatNumber(cleanNumber(b['MW.Inputs']))}</td>
+                <td>${formatNumber(cleanNumber(b['MW.Outputs']))}</td>
+                <td class="mono">${formatBeam(b.Fee || 0)}</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error('Load recent blocks error:', e);
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Error: ${e.message}</td></tr>`;
+    }
+}
+
+async function loadBlocks(append = false) {
+    const tbody = document.getElementById('blocks-list');
+    const headerRow = document.getElementById('blocks-header');
+    const btn = document.getElementById('blocks-load-more');
+
+    if (!append) {
+        tbody.innerHTML = '<tr><td colspan="15" class="loading"><span class="spinner"></span>Loading...</td></tr>';
+        blocksLoadedUntil = 0;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+
+    try {
+        const params = { nMax: 50, exp_am: 1, cols: selectedBlockCols };
+        if (blocksLoadedUntil > 0) params.hMax = blocksLoadedUntil - 1;
+
+        const data = await fetchAPI('/hdrs', params);
+
+        // Parse headers from response
+        if (data.value && data.value[0]) {
+            blockHeaders = data.value[0].map(h => parseTableValue(h) || String(h));
+            headerRow.innerHTML = `<tr>${blockHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
+        }
+
+        const rows = parseTableRows(data);
+
+        if (!rows.length) {
+            if (!append) tbody.innerHTML = '<tr><td colspan="15" class="empty">No blocks found</td></tr>';
+            btn.style.display = 'none';
+            return;
+        }
+
+        const html = rows.map(b => {
+            return `<tr onclick="showBlockDetail(${b.Height})">${blockHeaders.map(h => {
+                let val = b[h];
+                if (h === 'Height') return `<td><span class="mono hash">${formatNumber(val)}</span></td>`;
+                if (h === 'Timestamp') return `<td>${formatTime(val)}</td>`;
+                if (h === 'Hash') return `<td class="mono"><span class="truncate hash" title="${val}">${val?.slice(0,12)}...</span></td>`;
+                if (h === 'Fee' || h === 'T.Fee') return `<td class="mono">${formatBeam(val || 0)}</td>`;
+                if (h === 'Chainwork') return `<td class="mono">${formatLargeNumber(cleanNumber(val))}</td>`;
+                if (h.includes('Size')) return `<td class="mono">${formatBytes(cleanNumber(val))}</td>`;
+                return `<td class="mono">${formatNumber(cleanNumber(val))}</td>`;
+            }).join('')}</tr>`;
+        }).join('');
+
+        if (append) {
+            tbody.insertAdjacentHTML('beforeend', html);
+        } else {
+            tbody.innerHTML = html;
+        }
+
+        blocksLoadedUntil = rows[rows.length - 1].Height;
+        btn.style.display = (data.more && blocksLoadedUntil > 1) ? 'block' : 'none';
+    } catch (e) {
+        console.error('Load blocks error:', e);
+        if (!append) tbody.innerHTML = `<tr><td colspan="15" class="empty">Error: ${e.message}</td></tr>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Load More Blocks';
+    }
+}
+
+function loadMoreBlocks() { loadBlocks(true); }
+
+async function showBlockDetail(height) {
+    showPageDirect('block-detail');
+    const content = document.getElementById('block-detail-content');
+    content.innerHTML = '<div class="loading-card"><span class="spinner"></span>Loading block...</div>';
+
+    try {
+        const block = await fetchAPI('/block', { height });
+
+        if (!block.found) {
+            content.innerHTML = `<div class="loading-card">Block #${height} not found</div>`;
+            return;
+        }
+
+        const inputs = block.inputs || [];
+        const outputs = block.outputs || [];
+        const kernels = block.kernels || [];
+
+        content.innerHTML = `
+            <div class="detail-header">
+                <div class="detail-icon">#</div>
+                <div class="detail-title">
+                    <h2>Block #${formatNumber(height)}</h2>
+                    <div class="subtitle">${formatTime(block.timestamp)}</div>
+                </div>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Height</div>
+                    <div class="detail-value">${formatNumber(height)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Hash</div>
+                    <div class="detail-value"><span class="truncate" title="${block.hash}">${block.hash}</span> ${copyBtn(block.hash)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Previous Block</div>
+                    <div class="detail-value"><span class="hash truncate" onclick="showBlockDetail(${height-1})" title="${block.prev}">${block.prev}</span></div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Difficulty</div>
+                    <div class="detail-value">${formatNumber(block.difficulty)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Chainwork</div>
+                    <div class="detail-value">${block.chainwork || '-'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Block Subsidy</div>
+                    <div class="detail-value">${formatBeam(block.subsidy || 0)} BEAM</div>
+                </div>
+                ${block.rate_usd ? `<div class="detail-item"><div class="detail-label">BEAM/USD Rate</div><div class="detail-value">$${block.rate_usd}</div></div>` : ''}
+            </div>
+
+            <div class="detail-section">
+                <h3>Inputs (${inputs.length})</h3>
+                ${inputs.length ? `
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Type</th><th>Commitment</th><th>Value</th><th>Height</th><th>Maturity</th></tr></thead>
+                        <tbody>${inputs.map(i => `
+                            <tr onclick="${i.height ? `showBlockDetail(${i.height})` : ''}">
+                                <td><span class="trade-type ${i.type === 'Coinbase' ? 'mint' : ''}">${i.type || 'Regular'}</span></td>
+                                <td class="mono"><span class="truncate" title="${i.commitment}">${i.commitment}</span></td>
+                                <td class="mono">${i.Value ? formatBeam(i.Value) + ' BEAM' : '-'}</td>
+                                <td class="mono ${i.height ? 'hash' : ''}">${i.height ? formatNumber(i.height) : '-'}</td>
+                                <td class="mono">${i.Maturity ? formatNumber(i.Maturity) : '-'}</td>
+                            </tr>
+                        `).join('')}</tbody>
+                    </table>
+                </div>` : '<div class="loading-card">No inputs in this block</div>'}
+            </div>
+
+            <div class="detail-section">
+                <h3>Outputs (${outputs.length})</h3>
+                ${outputs.length ? `
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Commitment</th><th>Asset Range</th><th>Spent</th></tr></thead>
+                        <tbody>${outputs.map(o => `
+                            <tr onclick="${o.spent ? `showBlockDetail(${o.spent})` : ''}">
+                                <td class="mono"><span class="truncate" title="${o.commitment}">${o.commitment}</span></td>
+                                <td class="mono">${o.Asset ? `${o.Asset.min}-${o.Asset.max}` : '0'}</td>
+                                <td class="mono">${o.spent ? `<span class="hash">${formatNumber(o.spent)}</span>` : '<span style="color:var(--success)">Unspent</span>'}</td>
+                            </tr>
+                        `).join('')}</tbody>
+                    </table>
+                </div>` : '<div class="loading-card">No outputs in this block</div>'}
+            </div>
+
+            <div class="detail-section">
+                <h3>Kernels (${kernels.length})</h3>
+                ${kernels.length ? `
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Kernel ID</th><th>Fee</th><th>Min Height</th><th>Max Height</th></tr></thead>
+                        <tbody>${kernels.map(k => `
+                            <tr>
+                                <td class="mono"><span class="truncate" title="${k.id}">${k.id}</span> ${copyBtn(k.id)}</td>
+                                <td class="mono">${k.fee ? formatBeam(k.fee) + ' BEAM' : '0'}</td>
+                                <td class="mono">${formatNumber(k.minHeight || 0)}</td>
+                                <td class="mono">${formatNumber(k.maxHeight || 0)}</td>
+                            </tr>
+                        `).join('')}</tbody>
+                    </table>
+                </div>` : '<div class="loading-card">No kernels in this block</div>'}
+            </div>
+        `;
+    } catch (e) {
+        content.innerHTML = `<div class="loading-card">Error: ${e.message}</div>`;
+    }
+}
+
+// ==================== ASSETS ====================
+async function loadAssets() {
+    const container = document.getElementById('assets-list');
+    try {
+        if (!assetsData.length) {
+            container.innerHTML = '<div class="loading-card"><span class="spinner"></span>Loading assets...</div>';
+            const resp = await fetchAPI('/assets');
+            cacheAssets(resp);
+        }
+        if (!assetsData.length) {
+            container.innerHTML = '<div class="loading-card">No assets found</div>';
+            return;
+        }
+        renderAssets(assetsData);
+    } catch (e) {
+        console.error('Load assets error:', e);
+        container.innerHTML = `<div class="loading-card">Error: ${e.message}</div>`;
+    }
+}
+
+function renderAssets(assets) {
+    const container = document.getElementById('assets-list');
+    if (!assets.length) {
+        container.innerHTML = '<div class="loading-card">No assets found</div>';
+        return;
+    }
+    container.innerHTML = assets.map(a => {
+        const meta = parseMetadata(a.Metadata);
+        const symbol = meta.UN || meta.SN || meta.N || `CA-${a.Aid}`;
+        const name = meta.N || `Asset ${a.Aid}`;
+        const decimals = getDecimals(meta.NTHUN);
+        return `
+            <div class="card" onclick="showAssetDetail(${a.Aid})">
+                <div class="card-header">
+                    <div class="card-icon">${symbol.slice(0,2).toUpperCase()}</div>
+                    <div class="card-title">
+                        <h4>${esc(name)}</h4>
+                        <span class="subtitle">${esc(symbol)}</span>
+                    </div>
+                    <span class="card-badge">ID: ${a.Aid}</span>
+                </div>
+                <div class="card-stats">
+                    <div class="card-stat">
+                        <span class="card-stat-label">Total Supply</span>
+                        <span class="card-stat-value">${formatAsset(a.Supply || 0, decimals)}</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="card-stat-label">Locked in Contracts</span>
+                        <span class="card-stat-value">${formatAsset(a.Deposit || 0, decimals)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterAssets() {
+    const q = document.getElementById('asset-filter').value.toLowerCase();
+    const filtered = assetsData.filter(a => {
+        const meta = parseMetadata(a.Metadata);
+        const symbol = (meta.UN || meta.SN || meta.N || '').toLowerCase();
+        const name = (meta.N || '').toLowerCase();
+        return symbol.includes(q) || name.includes(q) || String(a.Aid).includes(q);
+    });
+    renderAssets(filtered);
+}
+
+async function showAssetDetail(id) {
+    showPageDirect('asset-detail');
+    const content = document.getElementById('asset-detail-content');
+    content.innerHTML = '<div class="loading-card"><span class="spinner"></span>Loading asset...</div>';
+
+    try {
+        const resp = await fetchAPI('/asset', { id, nMaxOps: 100 });
+        const meta = parseMetadata(resp.metadata);
+        const symbol = meta.UN || meta.SN || meta.N || `CA-${id}`;
+        const name = meta.N || `Asset ${id}`;
+        const decimals = getDecimals(meta.NTHUN);
+
+        // Parse distribution
+        const distribution = parseTableRows(resp['Asset distribution'] || {});
+
+        // Parse history
+        const history = parseTableRows(resp['Asset history'] || {});
+
+        // Find pools containing this asset - with detailed info like DEX page
+        let poolsHtml = '';
+        try {
+            const dexResp = await fetchAPI('/contract', { id: DEX_CONTRACT_ID, state: 1 });
+            const poolsTable = dexResp?.State?.Pools;
+            if (poolsTable?.value) {
+                const pools = parseTableRows(poolsTable).filter(p =>
+                    (p.Aid1 == id || p.Aid2 == id) && ((p['Amount1'] || 0) > 0 || (p['Amount2'] || 0) > 0)
+                );
+                if (pools.length) {
+                    poolsHtml = `
+                        <div class="detail-section">
+                            <h3>Liquidity Pools (${pools.length})</h3>
+                            <div class="card-grid">${pools.map(p => {
+                                const a1 = getAsset(p.Aid1);
+                                const a2 = getAsset(p.Aid2);
+                                const vol = (p.Volatility || 'High').toLowerCase();
+                                const rate = p['Rate 1:2'] || '';
+                                const otherAssetId = p.Aid1 == id ? p.Aid2 : p.Aid1;
+                                return `
+                                    <div class="card" onclick="showAssetDetail(${otherAssetId})">
+                                        <div class="pool-pair">
+                                            <div class="pool-pair-icons">
+                                                <div class="card-icon">${a1.symbol.slice(0,2)}</div>
+                                                <div class="card-icon">${a2.symbol.slice(0,2)}</div>
+                                            </div>
+                                            <span class="pool-pair-name">${a1.symbol} / ${a2.symbol}</span>
+                                            <span class="volatility-badge ${vol}">${p.Volatility || 'High'}</span>
+                                        </div>
+                                        <div class="pool-stats">
+                                            <div class="pool-stat">
+                                                <div class="pool-stat-label">${a1.symbol} Reserve</div>
+                                                <div class="pool-stat-value">${formatAsset(p['Amount1'] || 0, a1.decimals)}</div>
+                                            </div>
+                                            <div class="pool-stat">
+                                                <div class="pool-stat-label">${a2.symbol} Reserve</div>
+                                                <div class="pool-stat-value">${formatAsset(p['Amount2'] || 0, a2.decimals)}</div>
+                                            </div>
+                                            <div class="pool-stat">
+                                                <div class="pool-stat-label">LP Token ID</div>
+                                                <div class="pool-stat-value">#${p['LP-Token'] || 'N/A'}</div>
+                                            </div>
+                                            <div class="pool-stat">
+                                                <div class="pool-stat-label">LP Supply</div>
+                                                <div class="pool-stat-value">${formatAsset(p['Amount-LP-Token'] || 0, 8)}</div>
+                                            </div>
+                                            ${rate ? `<div class="pool-stat full-width"><div class="pool-stat-label">Rate</div><div class="pool-stat-value">1 ${a2.symbol} = ${rate} ${a1.symbol}</div></div>` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}</div>
+                        </div>
+                    `;
+                }
+            }
+        } catch (e) { console.error('Failed to load pools:', e); }
+
+        content.innerHTML = `
+            <div class="detail-header">
+                <div class="detail-icon">${symbol.slice(0,2).toUpperCase()}</div>
+                <div class="detail-title">
+                    <h2>${esc(name)}</h2>
+                    <div class="subtitle">${esc(symbol)} (Asset ID: ${id})</div>
+                </div>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Total Supply</div>
+                    <div class="detail-value">${formatAsset(resp.value || 0, decimals)} ${symbol}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Decimals</div>
+                    <div class="detail-value">${decimals}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Lock Height</div>
+                    <div class="detail-value">${resp.lock_height ? formatNumber(resp.lock_height) : 'None'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Owner Contract</div>
+                    <div class="detail-value">${resp.owner ? `<span class="hash truncate" onclick="showContractDetail('${resp.owner}')" title="${resp.owner}">${resp.owner.slice(0,12)}...${resp.owner.slice(-8)}</span>` : 'None'}</div>
+                </div>
+                ${meta.OPT_SITE_URL ? `<div class="detail-item"><div class="detail-label">Website</div><div class="detail-value"><a href="${esc(meta.OPT_SITE_URL)}" target="_blank">${esc(meta.OPT_SITE_URL.slice(0,40))}...</a></div></div>` : ''}
+            </div>
+
+            ${distribution.length ? `
+            <div class="detail-section">
+                <h3>Distribution</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Location</th><th>Type</th><th>Amount</th></tr></thead>
+                        <tbody>${distribution.map(d => `
+                            <tr ${d.Cid ? `onclick="showContractDetail('${d.Cid}')"` : 'style="cursor:default"'}>
+                                <td class="mono">${d.Cid ? `<span class="hash truncate" title="${d.Cid}">${d.Cid.slice(0,12)}...${d.Cid.slice(-8)}</span>` : 'Unlocked'}</td>
+                                <td>${d.Kind || '-'}</td>
+                                <td class="mono">${formatAsset(d['Locked Value'] || 0, decimals)} ${symbol}</td>
+                            </tr>
+                        `).join('')}</tbody>
+                    </table>
+                </div>
+            </div>` : ''}
+
+            ${poolsHtml}
+
+            ${history.length ? `
+            <div class="detail-section">
+                <h3>History (${history.length})</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead><tr><th>Block</th><th>Event</th><th>Amount</th><th>Total Supply</th></tr></thead>
+                        <tbody>${history.map(h => `
+                            <tr onclick="showBlockDetail(${h.Height})">
+                                <td><span class="mono hash">${formatNumber(h.Height)}</span></td>
+                                <td><span class="trade-type ${h.Event === 'Mint' ? 'mint' : h.Event === 'Burn' ? 'burn' : 'create'}">${h.Event}</span></td>
+                                <td class="mono ${String(h.Amount || '').includes('+') ? 'amount-positive' : String(h.Amount || '').includes('-') ? 'amount-negative' : ''}">${h.Amount ? formatAsset(parseAmount(h.Amount), decimals) : '-'}</td>
+                                <td class="mono">${h['Total Amount'] != null ? formatAsset(h['Total Amount'], decimals) : '-'}</td>
+                            </tr>
+                        `).join('')}</tbody>
+                    </table>
+                </div>
+            </div>` : ''}
+        `;
+    } catch (e) {
+        content.innerHTML = `<div class="loading-card">Error: ${e.message}</div>`;
+    }
+}
+
+// ==================== DEX ====================
+function switchDexTab(tab) {
+    document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+
+    document.getElementById('dex-pools-tab').style.display = tab === 'pools' ? 'block' : 'none';
+    document.getElementById('dex-trades-tab').style.display = tab === 'trades' ? 'block' : 'none';
+}
+
+async function loadDexData() {
+    await Promise.all([loadPools(), loadTrades()]);
+}
+
+async function loadPools() {
+    const container = document.getElementById('pools-list');
+    container.innerHTML = '<div class="loading-card"><span class="spinner"></span>Loading pools...</div>';
+
+    try {
+        const resp = await fetchAPI('/contract', { id: DEX_CONTRACT_ID, state: 1 });
+        const poolsTable = resp?.State?.Pools;
+
+        if (!poolsTable?.value) {
+            container.innerHTML = '<div class="loading-card">No pools data available</div>';
+            return;
+        }
+
+        const pools = parseTableRows(poolsTable).filter(p =>
+            (p['Amount1'] || 0) > 0 || (p['Amount2'] || 0) > 0
+        );
+
+        if (!pools.length) {
+            container.innerHTML = '<div class="loading-card">No active pools found</div>';
+            return;
+        }
+
+        container.innerHTML = pools.map(p => {
+            const a1 = getAsset(p.Aid1);
+            const a2 = getAsset(p.Aid2);
+            const vol = (p.Volatility || 'High').toLowerCase();
+            const rate = p['Rate 1:2'] || '';
+
+            return `
+                <div class="card" onclick="showAssetDetail(${p.Aid2})">
+                    <div class="pool-pair">
+                        <div class="pool-pair-icons">
+                            <div class="card-icon">${a1.symbol.slice(0,2)}</div>
+                            <div class="card-icon">${a2.symbol.slice(0,2)}</div>
+                        </div>
+                        <span class="pool-pair-name">${a1.symbol} / ${a2.symbol}</span>
+                        <span class="volatility-badge ${vol}">${p.Volatility || 'High'}</span>
+                    </div>
+                    <div class="pool-stats">
+                        <div class="pool-stat">
+                            <div class="pool-stat-label">${a1.symbol} Reserve</div>
+                            <div class="pool-stat-value">${formatAsset(p['Amount1'] || 0, a1.decimals)}</div>
+                        </div>
+                        <div class="pool-stat">
+                            <div class="pool-stat-label">${a2.symbol} Reserve</div>
+                            <div class="pool-stat-value">${formatAsset(p['Amount2'] || 0, a2.decimals)}</div>
+                        </div>
+                        <div class="pool-stat">
+                            <div class="pool-stat-label">LP Token ID</div>
+                            <div class="pool-stat-value">#${p['LP-Token'] || 'N/A'}</div>
+                        </div>
+                        <div class="pool-stat">
+                            <div class="pool-stat-label">LP Supply</div>
+                            <div class="pool-stat-value">${formatAsset(p['Amount-LP-Token'] || 0, 8)}</div>
+                        </div>
+                        ${rate ? `<div class="pool-stat full-width"><div class="pool-stat-label">Rate</div><div class="pool-stat-value">1 ${a2.symbol} = ${rate} ${a1.symbol}</div></div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = `<div class="loading-card">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadTrades(append = false) {
+    const tbody = document.getElementById('trades-list');
+    const btn = document.getElementById('trades-load-more');
+
+    if (!append) {
+        tbody.innerHTML = '<tr><td colspan="6" class="loading"><span class="spinner"></span>Loading...</td></tr>';
+        tradesLoadedUntil = 0;
+    }
+
+    btn.disabled = true;
+
+    try {
+        const params = { id: DEX_CONTRACT_ID, nMaxTxs: 100 };
+        if (tradesLoadedUntil > 0) params.hMax = tradesLoadedUntil - 1;
+
+        const resp = await fetchAPI('/contract', params);
+        const history = resp['Calls history'];
+
+        if (!history?.value) {
+            if (!append) tbody.innerHTML = '<tr><td colspan="6" class="empty">No trades data</td></tr>';
+            btn.style.display = 'none';
+            return;
+        }
+
+        const trades = [];
+        let minHeight = Infinity;
+
+        history.value.slice(1).forEach(item => {
+            const rows = item.type === 'group' ? item.value : [item];
+            rows.forEach(row => {
+                if (!Array.isArray(row)) return;
+                const height = row[0];
+                const kind = row[3];
+                if (!kind) return;
+
+                const fundsTable = row[5];
+                if (!fundsTable?.value) return;
+
+                const funds = fundsTable.value.map(f => ({
+                    aid: parseTableValue(f[0]),
+                    amount: parseTableValue(f[1])
+                }));
+
+                const inputs = funds.filter(f => String(f.amount).startsWith('-'));
+                const outputs = funds.filter(f => !String(f.amount).startsWith('-') && parseAmount(f.amount) > 0);
+
+                if (inputs.length && outputs.length) {
+                    trades.push({ height, kind, inputs, outputs });
+                    if (height < minHeight) minHeight = height;
+                }
+            });
+        });
+
+        if (!trades.length) {
+            if (!append) tbody.innerHTML = '<tr><td colspan="6" class="empty">No trades found</td></tr>';
+            btn.style.display = 'none';
+            return;
+        }
+
+        tradesLoadedUntil = minHeight;
+
+        const html = trades.map(t => {
+            const inAsset = getAsset(t.inputs[0]?.aid);
+            const outAsset = getAsset(t.outputs[0]?.aid);
+            const inAmt = Math.abs(parseAmount(t.inputs[0]?.amount));
+            const outAmt = parseAmount(t.outputs[0]?.amount);
+            const typeClass = t.kind === 'Trade' ? 'trade' : t.kind === 'Withdraw' ? 'withdraw' : 'liquidity';
+
+            return `
+                <tr onclick="showBlockDetail(${t.height})">
+                    <td><span class="mono hash">${formatNumber(t.height)}</span></td>
+                    <td><span class="trade-type ${typeClass}">${t.kind}</span></td>
+                    <td>${inAsset.symbol}</td>
+                    <td>${outAsset.symbol}</td>
+                    <td class="mono amount-negative">-${formatAsset(inAmt, inAsset.decimals)}</td>
+                    <td class="mono amount-positive">+${formatAsset(outAmt, outAsset.decimals)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        if (append) {
+            tbody.insertAdjacentHTML('beforeend', html);
+        } else {
+            tbody.innerHTML = html;
+        }
+
+        btn.style.display = history.more ? 'block' : 'none';
+    } catch (e) {
+        if (!append) tbody.innerHTML = `<tr><td colspan="6" class="empty">Error: ${e.message}</td></tr>`;
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function loadMoreTrades() { loadTrades(true); }
+
+// ==================== CONTRACTS ====================
+async function loadContracts() {
+    const tbody = document.getElementById('contracts-list');
+    tbody.innerHTML = '<tr><td colspan="5" class="loading"><span class="spinner"></span>Loading...</td></tr>';
+
+    try {
+        const resp = await fetchAPI('/contracts');
+
+        if (!resp?.value || resp.value.length < 2) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty">No contracts found</td></tr>';
+            return;
+        }
+
+        contractsData = resp.value.slice(1);
+        renderContracts(contractsData);
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Error: ${e.message}</td></tr>`;
+    }
+}
+
+function renderContracts(contracts) {
+    const tbody = document.getElementById('contracts-list');
+
+    if (!contracts.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">No contracts found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = contracts.map(row => {
+        const cid = parseTableValue(row[0]);
+        const kind = typeof row[1] === 'string' ? row[1] : '-';
+        const deployHeight = typeof row[2] === 'number' ? row[2] : parseTableValue(row[2]) || '-';
+        const locked = row[3];
+        const owned = row[4];
+
+        const lockedCount = countNestedTable(locked);
+        const ownedCount = countNestedTable(owned);
+
+        const lockedDisplay = locked === '' ? '0 assets' : `${lockedCount} asset${lockedCount !== 1 ? 's' : ''}`;
+        const ownedDisplay = owned === '' ? '0 assets' : `${ownedCount} asset${ownedCount !== 1 ? 's' : ''}`;
+
+        return `
+            <tr onclick="showContractDetail('${cid}')">
+                <td class="mono"><span class="hash truncate" title="${cid}">${cid?.slice(0,12)}...${cid?.slice(-8)}</span></td>
+                <td>${esc(String(kind))}</td>
+                <td class="mono">${typeof deployHeight === 'number' ? formatNumber(deployHeight) : deployHeight}</td>
+                <td>${lockedDisplay}</td>
+                <td>${ownedDisplay}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filterContracts() {
+    const q = document.getElementById('contract-filter').value.toLowerCase();
+    const filtered = contractsData.filter(row => {
+        const cid = String(parseTableValue(row[0]) || '').toLowerCase();
+        const kind = String(row[1] || '').toLowerCase();
+        return cid.includes(q) || kind.includes(q);
+    });
+    renderContracts(filtered);
+}
+
+async function showContractDetail(cid) {
+    showPageDirect('contract-detail');
+    const content = document.getElementById('contract-detail-content');
+    content.innerHTML = '<div class="loading-card"><span class="spinner"></span>Loading contract...</div>';
+
+    try {
+        const resp = await fetchAPI('/contract', { id: cid, state: 1, nMaxTxs: 50 });
+
+        const kind = resp.kind || 'Unknown';
+        const height = resp.h || '-';
+
+        // Parse locked funds
+        const lockedFunds = resp['Locked Funds'];
+        let lockedHtml = '';
+        if (lockedFunds?.value && Array.isArray(lockedFunds.value) && lockedFunds.value.length > 1) {
+            const rows = lockedFunds.value.slice(1);
+            lockedHtml = `
+                <div class="detail-section">
+                    <h3>Locked Funds (${rows.length})</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Asset</th><th>Amount</th></tr></thead>
+                            <tbody>${rows.map(r => {
+                                const aid = parseTableValue(r[0]);
+                                const amount = parseTableValue(r[1]);
+                                const asset = getAsset(aid);
+                                return `
+                                    <tr onclick="showAssetDetail(${aid})">
+                                        <td><span class="hash">${asset.symbol} (ID: ${aid})</span></td>
+                                        <td class="mono">${formatAsset(amount || 0, asset.decimals)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Parse owned assets
+        const ownedAssets = resp['Owned assets'];
+        let ownedHtml = '';
+        if (ownedAssets?.value && Array.isArray(ownedAssets.value) && ownedAssets.value.length > 1) {
+            const rows = ownedAssets.value.slice(1);
+            ownedHtml = `
+                <div class="detail-section">
+                    <h3>Owned Assets (${rows.length})</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead><tr><th>Asset ID</th><th>Supply</th></tr></thead>
+                            <tbody>${rows.map(r => {
+                                const aid = parseTableValue(r[0]);
+                                const supply = parseTableValue(r[1]);
+                                const asset = getAsset(aid);
+                                return `
+                                    <tr onclick="showAssetDetail(${aid})">
+                                        <td><span class="hash">${asset.symbol} (ID: ${aid})</span></td>
+                                        <td class="mono">${formatAsset(supply || 0, asset.decimals)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Parse calls history
+        const callsHistory = resp['Calls history'];
+        let historyHtml = '';
+        if (callsHistory?.value && callsHistory.value.length > 1) {
+            const calls = [];
+            callsHistory.value.slice(1).forEach(item => {
+                const rows = item.type === 'group' ? item.value : [item];
+                rows.forEach(row => {
+                    if (!Array.isArray(row)) return;
+                    calls.push({
+                        height: row[0],
+                        kind: row[3] || '-'
+                    });
+                });
+            });
+
+            if (calls.length) {
+                historyHtml = `
+                    <div class="detail-section">
+                        <h3>Recent Calls (${calls.length})</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead><tr><th>Block</th><th>Action</th></tr></thead>
+                                <tbody>${calls.slice(0, 50).map(c => `
+                                    <tr onclick="showBlockDetail(${c.height})">
+                                        <td><span class="mono hash">${formatNumber(c.height)}</span></td>
+                                        <td><span class="trade-type ${c.kind === 'Trade' ? 'trade' : c.kind === 'Withdraw' ? 'withdraw' : String(c.kind).includes('Liquidity') ? 'liquidity' : ''}">${c.kind}</span></td>
+                                    </tr>
+                                `).join('')}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Parse state (for DEX, show pools)
+        let stateHtml = '';
+        if (resp.State?.Pools?.value) {
+            const pools = parseTableRows(resp.State.Pools).filter(p =>
+                (p['Amount1'] || 0) > 0 || (p['Amount2'] || 0) > 0
+            );
+            if (pools.length) {
+                stateHtml = `
+                    <div class="detail-section">
+                        <h3>Liquidity Pools (${pools.length})</h3>
+                        <div class="card-grid">${pools.slice(0, 12).map(p => {
+                            const a1 = getAsset(p.Aid1);
+                            const a2 = getAsset(p.Aid2);
+                            return `
+                                <div class="card" onclick="showAssetDetail(${p.Aid2})">
+                                    <div class="pool-pair">
+                                        <div class="pool-pair-icons">
+                                            <div class="card-icon">${a1.symbol.slice(0,2)}</div>
+                                            <div class="card-icon">${a2.symbol.slice(0,2)}</div>
+                                        </div>
+                                        <span class="pool-pair-name">${a1.symbol}/${a2.symbol}</span>
+                                    </div>
+                                    <div class="pool-stats">
+                                        <div class="pool-stat"><div class="pool-stat-label">${a1.symbol}</div><div class="pool-stat-value">${formatAsset(p['Amount1'] || 0, a1.decimals)}</div></div>
+                                        <div class="pool-stat"><div class="pool-stat-label">${a2.symbol}</div><div class="pool-stat-value">${formatAsset(p['Amount2'] || 0, a2.decimals)}</div></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}</div>
+                    </div>
+                `;
+            }
+        }
+
+        content.innerHTML = `
+            <div class="detail-header">
+                <div class="detail-icon" style="font-size:1rem">SC</div>
+                <div class="detail-title">
+                    <h2>${esc(kind)}</h2>
+                    <div class="subtitle">Contract</div>
+                </div>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-label">Contract ID</div>
+                    <div class="detail-value">${cid} ${copyBtn(cid)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Type</div>
+                    <div class="detail-value">${esc(kind)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Current Height</div>
+                    <div class="detail-value">${formatNumber(height)}</div>
+                </div>
+            </div>
+
+            ${lockedHtml}
+            ${ownedHtml}
+            ${stateHtml}
+            ${historyHtml}
+        `;
+    } catch (e) {
+        content.innerHTML = `<div class="loading-card">Error: ${e.message}</div>`;
+    }
+}
+
+// ==================== ATOMIC SWAPS ====================
+async function loadSwaps() {
+    await Promise.all([loadSwapTotals(), loadSwapOffers()]);
+}
+
+async function loadSwapTotals() {
+    const grid = document.getElementById('swap-totals-grid');
+    try {
+        const totals = await fetchAPI('/swap_totals');
+
+        const coins = [
+            { key: 'beams_offered', name: 'BEAM', icon: 'beam' },
+            { key: 'bitcoin_offered', name: 'Bitcoin', icon: 'btc' },
+            { key: 'ethereum_offered', name: 'Ethereum', icon: 'eth' },
+            { key: 'litecoin_offered', name: 'Litecoin', icon: 'ltc' },
+            { key: 'dogecoin_offered', name: 'Dogecoin', icon: 'doge' },
+            { key: 'dash_offered', name: 'Dash', icon: 'dash' },
+            { key: 'usdt_offered', name: 'USDT', icon: 'usdt' },
+            { key: 'dai_offered', name: 'DAI', icon: 'dai' },
+            { key: 'wbtc_offered', name: 'WBTC', icon: 'wbtc' },
+            { key: 'qtum_offered', name: 'QTUM', icon: 'qtum' },
+        ];
+
+        grid.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-icon purple">${getStatIcon('chain')}</div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Swaps</span>
+                    <span class="stat-value">${formatNumber(totals.total_swaps_count || 0)}</span>
+                </div>
+            </div>
+            ${coins.map(c => `
+                <div class="swap-coin-card">
+                    <div class="swap-coin-icon ${c.icon}">${c.name.slice(0,2).toUpperCase()}</div>
+                    <div class="swap-coin-name">${c.name}</div>
+                    <div class="swap-coin-amount">${totals[c.key] || '0'} offered</div>
+                </div>
+            `).join('')}
+        `;
+    } catch (e) {
+        grid.innerHTML = `<div class="loading-card">Error: ${e.message}</div>`;
+    }
+}
+
+async function loadSwapOffers() {
+    const tbody = document.getElementById('swap-offers-list');
+    try {
+        const offers = await fetchAPI('/swap_offers');
+
+        if (!offers || !offers.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">No active swap offers at this time</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = offers.map(o => `
+            <tr>
+                <td class="mono"><span class="truncate">${o.id || '-'}</span></td>
+                <td>${o.send_currency || '-'} ${o.send_amount || ''}</td>
+                <td>${o.receive_currency || '-'} ${o.receive_amount || ''}</td>
+                <td class="mono">${o.rate || '-'}</td>
+                <td class="mono">${o.min_amount || '-'}</td>
+                <td><span class="trade-type trade">${o.status || 'Active'}</span></td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Error: ${e.message}</td></tr>`;
+    }
+}
+
+// ==================== UTILITIES ====================
+function formatNumber(n) { return n != null ? new Intl.NumberFormat().format(n) : '0'; }
+function formatLargeNumber(n) {
+    if (n >= 1e15) return (n / 1e15).toFixed(2) + 'P';
+    if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+    return formatNumber(n);
+}
+function formatBytes(b) {
+    if (b >= 1e9) return (b / 1e9).toFixed(2) + ' GB';
+    if (b >= 1e6) return (b / 1e6).toFixed(2) + ' MB';
+    if (b >= 1e3) return (b / 1e3).toFixed(2) + ' KB';
+    return b + ' B';
+}
+function formatBeam(groth) { return (Number(groth) / 1e8).toFixed(8); }
+function formatBeamShort(groth) {
+    const v = Number(groth) / 1e8;
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+    return v.toFixed(2);
+}
+function formatAsset(amt, dec = 8) {
+    const v = Math.abs(Number(amt)) / Math.pow(10, dec);
+    if (v >= 1e12) return (v / 1e12).toFixed(2) + 'T';
+    if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+    return v.toFixed(Math.min(dec, 4));
+}
+function formatTime(ts) {
+    if (!ts) return '-';
+    const d = new Date(ts * 1000);
+    return d.toLocaleString();
+}
+function parseMetadata(m) {
+    if (!m) return {};
+    if (typeof m === 'object') return m;
+    const r = {};
+    String(m).replace('STD:', '').split(';').forEach(p => {
+        const [k, ...v] = p.split('=');
+        if (k) r[k] = v.join('=');
+    });
+    return r;
+}
+function getDecimals(nthun) {
+    if (!nthun) return 8;
+    const units = { Groth: 8, Cent: 6, Satoshi: 8, fomo: 8, Flicker: 8, MiniB: 8 };
+    return units[nthun] || 8;
+}
+function getAsset(id) {
+    return assetsMap[id] || { id, symbol: `CA-${id}`, name: `Asset ${id}`, decimals: 8 };
+}
+function parseAmount(s) {
+    if (typeof s === 'number') return s;
+    return parseInt(String(s).replace(/[+,]/g, '')) || 0;
+}
+function cleanNumber(s) {
+    if (typeof s === 'number') return s;
+    if (!s) return 0;
+    return parseInt(String(s).replace(/,/g, '')) || 0;
+}
+function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+}
+function copyBtn(text) {
+    return `<button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${text}', this)" title="Copy">📋</button>`;
+}
+function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copied');
+        btn.textContent = '✓';
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.textContent = '📋';
+        }, 2000);
+    });
+}
+
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', () => {
+    testConnection();
+    loadStatus();
+    loadRecentBlocks();
+});
+</script>
+</body>
+</html>

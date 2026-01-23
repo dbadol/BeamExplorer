@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117"/>
+      <stop offset="100%" style="stop-color:#1a2332"/>
+    </linearGradient>
+    <linearGradient id="chainGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#25c2a0"/>
+      <stop offset="50%" style="stop-color:#00d4ff"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>
+    <linearGradient id="blockGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#25c2a0"/>
+      <stop offset="100%" style="stop-color:#1a8a70"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:0.1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#bgGrad)" stroke="#2d3748" stroke-width="1"/>
+
+  <!-- Chain connection lines -->
+  <path d="M22 35 L35 50 L22 65" stroke="url(#chainGrad)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M35 50 L50 50" stroke="url(#chainGrad)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M65 50 L78 35" stroke="url(#chainGrad)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M65 50 L78 65" stroke="url(#chainGrad)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Block 1 (left) -->
+  <rect x="16" y="28" width="14" height="14" rx="3" fill="url(#blockGrad)" opacity="0.7"/>
+  <rect x="18" y="30" width="4" height="2" rx="1" fill="#fff" opacity="0.5"/>
+
+  <!-- Block 2 (left bottom) -->
+  <rect x="16" y="58" width="14" height="14" rx="3" fill="url(#blockGrad)" opacity="0.7"/>
+  <rect x="18" y="60" width="4" height="2" rx="1" fill="#fff" opacity="0.5"/>
+
+  <!-- Block 3 (center - main/highlighted) -->
+  <rect x="43" y="40" width="20" height="20" rx="4" fill="url(#blockGrad)"/>
+  <rect x="46" y="43" width="6" height="2" rx="1" fill="#fff" opacity="0.6"/>
+  <rect x="46" y="47" width="10" height="2" rx="1" fill="#fff" opacity="0.4"/>
+  <rect x="46" y="51" width="8" height="2" rx="1" fill="#fff" opacity="0.3"/>
+
+  <!-- Block 4 (right top) -->
+  <rect x="72" y="28" width="14" height="14" rx="3" fill="url(#blockGrad)" opacity="0.7"/>
+  <rect x="74" y="30" width="4" height="2" rx="1" fill="#fff" opacity="0.5"/>
+
+  <!-- Block 5 (right bottom) -->
+  <rect x="72" y="58" width="14" height="14" rx="3" fill="url(#blockGrad)" opacity="0.7"/>
+  <rect x="74" y="60" width="4" height="2" rx="1" fill="#fff" opacity="0.5"/>
+
+  <!-- Privacy shield overlay -->
+  <path d="M50 18 L62 24 L62 38 C62 48 50 56 50 56 C50 56 38 48 38 38 L38 24 Z"
+        fill="url(#shieldGrad)" stroke="url(#chainGrad)" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Lock icon inside shield -->
+  <rect x="46" y="30" width="8" height="6" rx="1" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity="0.8"/>
+  <path d="M48 30 L48 27 A2 2 0 0 1 52 27 L52 30" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity="0.8"/>
+</svg>
