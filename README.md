@@ -38,6 +38,7 @@ The dashboard showing key blockchain statistics:
 - **Recent Blocks** - Latest blocks with quick stats
 
 ### Blocks
+
 Browse all blocks with customizable columns:
 
 | Column Group | Available Columns |
@@ -99,6 +100,7 @@ Click any contract to view:
 - **Recent Calls** - Contract interaction history
 
 ### Atomic Swaps
+
 Cross-chain trading statistics:
 - **Total Swaps** - All-time swap count
 - **Supported Coins** - BTC, ETH, LTC, DOGE, DASH, USDT, DAI, WBTC, QTUM
@@ -118,6 +120,41 @@ The explorer supports multiple BEAM API nodes:
 The connection status indicator shows:
 - 🟢 Green = Connected
 - 🔴 Red = Disconnected
+
+## Running your own node
+
+### Setup
+
+- Download the latest explorer node binary for your platform (Windows, Linux or Mac) from https://github.com/BeamMW/beam/releases/.
+
+- Open the `explorer-node.cfg` file and input some peer URLs (for the initial connection to the network), and two available ports to run your node and its API:
+
+  ```
+  # peer address
+  peer=us-nodes.mainnet.beam.mw:8100,eu-nodes.mainnet.beam.mw:8100
+  
+  # port to start the local node on
+  port=1000
+  
+  # port to start the local api server on
+  api_port=8888
+  
+  # old logs cleanup period (days)
+  log_cleanup_days=5
+  ```
+
+### Initial sync
+
+- Launch the explorer node and let it sync. Depending on your internet connection, this initial sync might take several hours. It will create a `explorer-node.db` file of about 45Gb.
+- *Remark*: For the explorer node to be able to provide human-readable smart contract information, download the `Parser.wasm` file from https://github.com/BeamMW/beam/tree/master/bvm/Shaders/Explorer and run the following command once:
+  - Linux/Mac: `./explorer-node --contract_rich_parser=Parser.wasm`
+  - Windows: `explorer-node.exe --contract_rich_parser=Parser.wasm`
+
+### Frontend
+
+- With the node synced and running, open this explorer HTML frontend, click on the node selector button and select `Custom Node...` in the dropdown menu.
+- Enter the URL of your local node, including the API port you previously defined (e.g. `http://localhost:8888`).
+- Done! You are now running a **fully local and private Beam explorer**, both frontend *and* node!
 
 ## API Reference
 
